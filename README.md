@@ -1,4 +1,4 @@
-# 🍽️ FoodHub: เว็บรีวิวร้านอาหาร
+# 🍽️ FoodJubb: เว็บรีวิวร้านอาหาร
 
 React 19 + React Router 6 + Tailwind CSS 3 ต่อ API ด้วย `fetch` (JSON) โครงสร้างและวิธีเขียนเหมือน MovieHub ทุกอย่าง
 (`apiFetch` ตัวเดียวใน `src/api/backend.js`, `useState` + `useEffect` โหลดข้อมูลด้วย status `loading | error | success`, `AuthContext`, `ProtectedRoute`, `RequireRole`, mock backend ด้วย Express)
@@ -20,8 +20,10 @@ npm run mock              # เทอร์มินัลที่ 1: backend �
 npm start                 # เทอร์มินัลที่ 2: หน้าเว็บที่พอร์ต 3000
 ```
 
-บัญชีทดลอง (mock): สมาชิก `demo@foodhub.test` / `1234`, ผู้ดูแล `admin@foodhub.test` / `1234`
+บัญชีทดลอง (mock): สมาชิก `demo@foodjubb.test` / `1234`, ผู้ดูแล `admin@foodjubb.test` / `1234`
 ข้อมูลใน mock เก็บในหน่วยความจำ ปิดแล้วหาย
+
+> ต้องเปิด mock backend ก่อนล็อกอินเสมอ: รัน `npm run mock` ใน terminal แรก แล้วเปิด `npm start` ใน terminal ที่สอง
 
 ## โครงสร้างไฟล์
 

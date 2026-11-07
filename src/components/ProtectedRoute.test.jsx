@@ -31,8 +31,8 @@ test('ยังไม่ login ต้องถูกพาไปหน้า Log
 });
 
 test('มี token ใน localStorage แล้ว ต้องเห็นหน้าลับ', () => {
-  localStorage.setItem('foodhub.token', 'mock.1.abc');
-  localStorage.setItem('foodhub.member', JSON.stringify({ id: 1, displayName: 'Demo' }));
+  localStorage.setItem('foodjubb.token', 'mock.1.abc');
+  localStorage.setItem('foodjubb.member', JSON.stringify({ id: 1, displayName: 'Demo' }));
 
   renderAt('/me/wishlist');
 

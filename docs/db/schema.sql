@@ -1,4 +1,4 @@
--- FoodHub: สร้างตารางทั้งหมด (PostgreSQL 14+) รันครั้งเดียว: psql "$DATABASE_URL" -f docs/db/schema.sql
+-- FoodJubb: สร้างตารางทั้งหมด (PostgreSQL 14+) รันครั้งเดียว: psql "$DATABASE_URL" -f docs/db/schema.sql
 -- คำอธิบายและ ER diagram อยู่ใน docs/db-schema.md
 
 BEGIN;

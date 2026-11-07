@@ -1,4 +1,4 @@
-# FoodHub Database Schema (ส่งให้ทีม Go)
+# FoodJubb Database Schema (ส่งให้ทีม Go)
 
 | ไฟล์ | ใช้ทำอะไร |
 |---|---|

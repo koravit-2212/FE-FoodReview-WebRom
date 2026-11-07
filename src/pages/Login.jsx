@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
 function Login() {
-  const [email, setEmail] = useState('demo@foodhub.test');   // บัญชีทดลองของ mock
+  const [email, setEmail] = useState('demo@foodjubb.test');   // บัญชีทดลองของ mock
   const [password, setPassword] = useState('1234');
   const [error, setError] = useState(null);
   const [status, setStatus] = useState('typing');             // 'typing' | 'submitting'
@@ -31,7 +31,7 @@ function Login() {
     <div className="mx-auto max-w-sm px-4 py-12">
       <h1 className="text-2xl font-semibold text-slate-900">เข้าสู่ระบบ</h1>
       <p className="mt-1 text-sm text-slate-500">
-        ทดลองด้วย demo@foodhub.test / 1234 (สมาชิก) หรือ admin@foodhub.test / 1234 (ผู้ดูแล) หรือสมัครใหม่
+        ทดลองด้วย demo@foodjubb.test / 1234 (สมาชิก) หรือ admin@foodjubb.test / 1234 (ผู้ดูแล) หรือสมัครใหม่
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-3">

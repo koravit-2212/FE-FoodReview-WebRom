@@ -1,6 +1,6 @@
-# API ที่หน้าเว็บ FoodHub ต้องใช้ (ส่งให้ทีม Go)
+# API ที่หน้าเว็บ FoodJubb ต้องใช้ (ส่งให้ทีม Go)
 
-ทีม: ______________________  หน้าเว็บ: FoodHub (Guest / Member / Admin)
+ทีม: ______________________  หน้าเว็บ: FoodJubb (Guest / Member / Admin)
 
 กติกา: ทุก endpoint ตอบเป็น JSON, ใส่ prefix `/api`, ใช้ชื่อ field แบบ camelCase
 โครงตารางฐานข้อมูลอยู่ที่ [db-schema.md](db-schema.md)

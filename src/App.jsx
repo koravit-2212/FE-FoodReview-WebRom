@@ -23,9 +23,9 @@ function App() {
   return (
     // AuthProvider ครอบทั้งแอป ทุกหน้าข้างในจึงเรียก useAuth() ได้
     <AuthProvider>
-      {/* พื้นหลังแดง + กรอบขาวมุมมนครอบทั้งเว็บ */}
-      <div className="min-h-screen bg-red-600 p-3 md:p-8">
-       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+      {/* เต็มจอ ไม่มีกรอบแดง */}
+      <div className="flex min-h-screen flex-col bg-white">
+       <div className="flex flex-1 flex-col">
         <Navbar />
         <main className="flex-1">
           <Routes>

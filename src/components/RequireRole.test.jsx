@@ -28,8 +28,8 @@ test('Guest เข้าหลังบ้านไม่ได้ ถูกพ�
 });
 
 test('Member เข้าหลังบ้านไม่ได้ ต้องเห็น 403', () => {
-  localStorage.setItem('foodhub.token', 'mock.1.abc');
-  localStorage.setItem('foodhub.member', JSON.stringify({ id: 1, displayName: 'Demo', role: 'member' }));
+  localStorage.setItem('foodjubb.token', 'mock.1.abc');
+  localStorage.setItem('foodjubb.member', JSON.stringify({ id: 1, displayName: 'Demo', role: 'member' }));
 
   renderAt('/admin');
 
@@ -38,8 +38,8 @@ test('Member เข้าหลังบ้านไม่ได้ ต้อง
 });
 
 test('Admin เข้าหลังบ้านได้', () => {
-  localStorage.setItem('foodhub.token', 'mock.2.abc');
-  localStorage.setItem('foodhub.member', JSON.stringify({ id: 2, displayName: 'Admin', role: 'admin' }));
+  localStorage.setItem('foodjubb.token', 'mock.2.abc');
+  localStorage.setItem('foodjubb.member', JSON.stringify({ id: 2, displayName: 'Admin', role: 'admin' }));
 
   renderAt('/admin');
 

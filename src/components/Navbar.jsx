@@ -19,8 +19,8 @@ function Navbar() {
       <nav className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-3 px-5 py-5 md:px-8">
         <Link to="/" className="flex items-center gap-3">
           <SearchIcon className="h-9 w-9 text-red-600" />
-          <span className="text-lg leading-tight text-slate-700">
-            food<br /><span className="text-slate-500">hub</span><span className="text-red-600">.com</span>
+          <span className="text-xl text-slate-700">
+            foodjubb<span className="text-red-600">.com</span>
           </span>
         </Link>
         <div className="ml-auto flex flex-wrap items-center gap-x-6 gap-y-2">

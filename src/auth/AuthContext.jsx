@@ -6,8 +6,8 @@ import * as api from '../api/backend';
 // ไม่ login = Guest, login แล้ว = Member, member ที่ role เป็น admin = Admin
 const AuthContext = createContext(null);
 
-const TOKEN_KEY = 'foodhub.token';
-const MEMBER_KEY = 'foodhub.member';
+const TOKEN_KEY = 'foodjubb.token';
+const MEMBER_KEY = 'foodjubb.member';
 
 export function AuthProvider({ children }) {
   // อ่านค่าเดิมจาก localStorage จะได้ไม่หลุด login ตอน refresh

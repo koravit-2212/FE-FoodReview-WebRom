@@ -1,4 +1,4 @@
-// Backend จำลองของ FoodHub: ทำตัวเหมือน API ของทีม Go ทุกประการ (path, JSON, status code)
+// Backend จำลองของ FoodJubb: ทำตัวเหมือน API ของทีม Go ทุกประการ (path, JSON, status code)
 // แต่เก็บข้อมูลในหน่วยความจำ ปิดแล้วหาย  รัน:  npm run mock   (พอร์ต 4000)
 // สัญญาทั้งหมดอยู่ใน docs/restaurant-api-spec.md
 
@@ -10,12 +10,19 @@ const PROVINCES = ["กรุงเทพมหานคร", "กระบี�
 const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://foodhub-restaurant-review.vercel.app',     // เปลี่ยนเป็นโดเมน Vercel ของทีมเรา
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  'http://localhost:4000',
+  'http://127.0.0.1:4000',
+  'http://0.0.0.0:4000',
+  'https://foodjubb-restaurant-review.vercel.app',     // เปลี่ยนเป็นโดเมน Vercel ของทีมเรา
 ];
+
+const isLocalOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?$/.test(origin || '');
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || isLocalOrigin(origin)) {
       callback(null, true);
       return;
     }
@@ -39,8 +46,8 @@ const daysAgo = (d) => new Date(now - d * 86400000).toISOString();
 
 const db = {
   members: [
-    { id: 1, email: 'demo@foodhub.test', password: '1234', displayName: 'Demo', role: 'member', createdAt: daysAgo(30) },
-    { id: 2, email: 'admin@foodhub.test', password: '1234', displayName: 'Admin', role: 'admin', createdAt: daysAgo(60) },
+    { id: 1, email: 'demo@foodjubb.test', password: '1234', displayName: 'Demo', role: 'member', createdAt: daysAgo(30) },
+    { id: 2, email: 'admin@foodjubb.test', password: '1234', displayName: 'Admin', role: 'admin', createdAt: daysAgo(60) },
   ],
   tokens: new Map(),                               // token -> memberId
   restaurants: [
@@ -378,6 +385,6 @@ app.use('/api', (req, res) => res.status(404).json({ error: `ไม่มี end
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`FoodHub mock backend พร้อมที่ http://localhost:${PORT}`);
-  console.log('สมาชิกทดลอง: demo@foodhub.test / 1234    ผู้ดูแล: admin@foodhub.test / 1234   (ข้อมูลทั้งหมดหายเมื่อปิด)');
+  console.log(`FoodJubb mock backend พร้อมที่ http://localhost:${PORT}`);
+  console.log('สมาชิกทดลอง: demo@foodjubb.test / 1234    ผู้ดูแล: admin@foodjubb.test / 1234   (ข้อมูลทั้งหมดหายเมื่อปิด)');
 });

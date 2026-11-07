@@ -6,9 +6,9 @@ function About() {
   ];
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 md:px-6">
-      <h1 className="text-2xl font-semibold text-slate-900">เกี่ยวกับ FoodHub</h1>
+      <h1 className="text-2xl font-semibold text-slate-900">เกี่ยวกับ FoodJubb</h1>
       <p className="mt-3 leading-relaxed text-slate-600">
-        FoodHub เป็นเว็บรีวิวร้านอาหาร สร้างด้วย React และ Tailwind CSS ดึงข้อมูลจาก Backend ผ่าน fetch (JSON)
+        FoodJubb เป็นเว็บรีวิวร้านอาหาร สร้างด้วย React และ Tailwind CSS ดึงข้อมูลจาก Backend ผ่าน fetch (JSON)
         โครงสร้างโปรเจกต์ทำตามแบบ MovieHub ของวิชา Client Side Web Programming
       </p>
       <h2 className="mt-8 text-lg font-semibold text-slate-900">ผู้ใช้ 3 แบบ</h2>
