@@ -51,13 +51,16 @@ function RestaurantDetail() {
 
   if (status === 'loading') {
     return (
-      <div className="mx-auto max-w-4xl animate-pulse px-4 py-10 md:px-6">
-        <div className="flex flex-col gap-8 md:flex-row">
-          <div className="aspect-[4/3] w-full shrink-0 rounded-xl bg-slate-100 md:w-72" />
-          <div className="flex-1 space-y-3">
-            <div className="h-8 w-2/3 rounded bg-slate-100" />
-            <div className="h-4 w-1/3 rounded bg-slate-100" />
-            <div className="h-24 w-full rounded bg-slate-100" />
+      <div className="min-h-screen bg-slate-100">
+        <div className="mx-auto max-w-6xl animate-pulse px-4 py-6 md:px-6">
+          <div className="h-64 rounded-xl bg-slate-200 md:h-80" />
+          <div className="mt-4 grid gap-4 md:grid-cols-[2fr_1fr]">
+            <div className="space-y-3 rounded-xl bg-white p-5">
+              <div className="h-8 w-2/3 rounded bg-slate-100" />
+              <div className="h-4 w-1/3 rounded bg-slate-100" />
+              <div className="h-24 w-full rounded bg-slate-100" />
+            </div>
+            <div className="h-64 rounded-xl bg-white" />
           </div>
         </div>
       </div>
@@ -74,7 +77,10 @@ function RestaurantDetail() {
     );
   }
 
-  const cover = restaurant.images?.[0];
+  const images = (restaurant.images ?? []).filter(Boolean);
+  const galleryImages = (images.length ? images : [null]).slice(0, 5);
+  const galleryColumns = galleryImages.length === 1 ? 'md:grid-cols-1' : galleryImages.length === 2 ? 'md:grid-cols-2' : galleryImages.length === 3 ? 'md:grid-cols-4' : 'md:grid-cols-5';
+  const cover = images[0];
   const cuisines = restaurant.cuisines?.length ? restaurant.cuisines : [restaurant.cuisine].filter(Boolean);
   const mapUrl = safeUrl(restaurant.googleMapsLink);
   const facebookUrl = safeUrl(restaurant.facebook);
@@ -84,75 +90,98 @@ function RestaurantDetail() {
   const menu = Array.isArray(restaurant.menu) ? restaurant.menu.join(', ') : restaurant.menu;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 md:px-6">
-      <Link to="/restaurants" className="text-sm text-slate-500 hover:text-red-600">กลับไปหน้าร้านทั้งหมด</Link>
+    <div className="min-h-screen bg-slate-100">
+      <main className="mx-auto max-w-6xl px-4 py-5 md:px-6">
+        <Link to="/restaurants" className="text-sm text-slate-500 hover:text-red-600">กลับไปหน้าร้านทั้งหมด</Link>
 
-      <div className="mt-4 flex flex-col gap-8 md:flex-row">
-        <div className="w-full shrink-0 self-start md:w-72">
-          <RestaurantImage src={cover} alt={`รูปร้าน ${restaurant.name}`} cuisine={restaurant.cuisine} emojiClass="text-6xl"
-                           className="aspect-[4/3] w-full rounded-xl border border-slate-200 object-cover" />
-          {cover && restaurant.imageCredit && (
-            <p className="mt-1 text-xs text-slate-400">{restaurant.imageCredit}</p>
-          )}
-        </div>
-
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-slate-900 md:text-3xl">{restaurant.name}</h1>
-          {restaurant.nameTh && <p className="mt-1 text-slate-500">{restaurant.nameTh}</p>}
-          <p className="mt-2 text-sm text-slate-500">
-            {restaurant.province} | {ratingText(restaurant.rating, restaurant.reviewCount)}
-          </p>
-          <ul className="mt-2 flex flex-wrap gap-1.5">
-            {cuisines.map(c => (
-              <li key={c} className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs text-red-700">{c}</li>
-            ))}
-            {Object.entries(awards).map(([award, years]) => (
-              <li key={award} className="rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs text-yellow-800">
-                🏅 Michelin {award} {years.join(', ')}
-              </li>
-            ))}
-          </ul>
-          {restaurant.description && <p className="mt-4 leading-relaxed text-slate-700">{restaurant.description}</p>}
-
-          <dl className="mt-4 space-y-1 text-sm text-slate-600">
-            {fullAddress(restaurant) && <div><dt className="inline font-medium">ที่อยู่: </dt><dd className="inline">{fullAddress(restaurant)}</dd></div>}
-            {restaurant.phone && <div><dt className="inline font-medium">โทร: </dt><dd className="inline">{restaurant.phone}</dd></div>}
-            {restaurant.openingHours && <div><dt className="inline font-medium">เวลาเปิด: </dt><dd className="inline">{restaurant.openingHours}</dd></div>}
-            {menu && <div><dt className="inline font-medium">เมนูแนะนำ: </dt><dd className="inline">{menu}</dd></div>}
-          </dl>
-
-          {(mapUrl || facebookUrl) && (
-            <div className="mt-3 flex flex-wrap gap-2 text-sm">
-              {mapUrl && (
-                <a href={mapUrl} target="_blank" rel="noreferrer"
-                   className="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-red-50">📍 เปิดแผนที่</a>
-              )}
-              {facebookUrl && (
-                <a href={facebookUrl} target="_blank" rel="noreferrer"
-                   className="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-red-50">Facebook ของร้าน</a>
+        <div className={`mt-3 grid h-56 grid-cols-2 grid-rows-2 gap-1 overflow-hidden rounded-xl md:h-80 ${galleryColumns}`}>
+          {galleryImages.map((image, index) => (
+            <div
+              key={image ?? `placeholder-${index}`}
+              className={`relative overflow-hidden ${index === 0 ? `col-span-2 row-span-2 ${galleryImages.length >= 3 ? 'md:col-span-2' : 'md:col-span-1'}` : index === 1 ? 'row-span-2 md:col-span-1' : 'md:col-span-1'}`}
+            >
+              <RestaurantImage
+                src={image}
+                alt={`รูปร้าน ${restaurant.name} รูปที่ ${index + 1}`}
+                cuisine={restaurant.cuisine}
+                emojiClass="text-5xl"
+                className="h-full w-full object-cover"
+              />
+              {index === galleryImages.length - 1 && images.length > galleryImages.length && (
+                <div className="absolute inset-0 grid place-items-center bg-black/50 text-lg font-semibold text-white">
+                  ดูรูปทั้งหมด +{images.length - galleryImages.length}
+                </div>
               )}
             </div>
-          )}
-
-          {/* Guest เห็นลิงก์ให้เข้าสู่ระบบ, Member เห็นปุ่มหัวใจ */}
-          <RestaurantActions key={restaurant.id + String(token)} restaurantId={restaurant.id} initialWishlisted={restaurant.isWishlisted} />
-
-          <div className="mt-8">
-            <h2 className="mb-3 text-lg font-semibold text-slate-900">รีวิว ({reviews.length})</h2>
-            <ReviewList items={reviews} />
-          </div>
-
-          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-            {isLoggedIn ? (
-              <ReviewForm key={restaurant.id} restaurantName={restaurant.name} onSubmit={handleReviewSubmit} />
-            ) : (
-              <p className="text-sm text-slate-500">
-                <Link to="/login" className="text-red-600 hover:underline">เข้าสู่ระบบ</Link> เพื่อเขียนรีวิว
-              </p>
-            )}
-          </div>
+          ))}
         </div>
-      </div>
+
+        {cover && restaurant.imageCredit && (
+          <p className="mt-1 text-right text-xs text-slate-400">{restaurant.imageCredit}</p>
+        )}
+
+        <div className="mt-4 grid items-start gap-4 md:grid-cols-[2fr_1fr]">
+          <div className="space-y-4">
+            <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <div className="p-5">
+                <h1 className="text-2xl font-semibold text-slate-900 md:text-3xl">{restaurant.name}</h1>
+                {restaurant.nameTh && <p className="mt-1 text-slate-500">{restaurant.nameTh}</p>}
+                <p className="mt-2 text-sm text-slate-500">
+                  {restaurant.province} | {ratingText(restaurant.rating, restaurant.reviewCount)}
+                </p>
+                <ul className="mt-3 flex flex-wrap gap-1.5">
+                  {cuisines.map(c => (
+                    <li key={c} className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs text-red-700">{c}</li>
+                  ))}
+                  {Object.entries(awards).map(([award, years]) => (
+                    <li key={award} className="rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs text-yellow-800">
+                      🏅 Michelin {award} {years.join(', ')}
+                    </li>
+                  ))}
+                </ul>
+                {restaurant.description && <p className="mt-4 leading-relaxed text-slate-700">{restaurant.description}</p>}
+                <RestaurantActions key={restaurant.id + String(token)} restaurantId={restaurant.id} initialWishlisted={restaurant.isWishlisted} />
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-slate-200 bg-white p-5">
+              <h2 className="mb-3 text-lg font-semibold text-slate-900">รีวิว ({reviews.length})</h2>
+              <ReviewList items={reviews} />
+              <div className="mt-5 border-t border-slate-100 pt-5">
+                {isLoggedIn ? (
+                  <ReviewForm key={restaurant.id} restaurantName={restaurant.name} onSubmit={handleReviewSubmit} />
+                ) : (
+                  <p className="text-sm text-slate-500">
+                    <Link to="/login" className="text-red-600 hover:underline">เข้าสู่ระบบ</Link> เพื่อเขียนรีวิว
+                  </p>
+                )}
+              </div>
+            </section>
+          </div>
+
+          <aside className="rounded-xl border border-slate-200 bg-white p-5">
+            <h2 className="text-lg font-semibold text-slate-900">ข้อมูลร้าน</h2>
+            <dl className="mt-4 space-y-4 text-sm text-slate-600">
+              {fullAddress(restaurant) && <div><dt className="font-medium text-slate-800">ที่อยู่</dt><dd className="mt-1">{fullAddress(restaurant)}</dd></div>}
+              {restaurant.phone && <div><dt className="font-medium text-slate-800">โทร</dt><dd className="mt-1">{restaurant.phone}</dd></div>}
+              {restaurant.openingHours && <div><dt className="font-medium text-slate-800">เวลาเปิด</dt><dd className="mt-1">{restaurant.openingHours}</dd></div>}
+              {menu && <div><dt className="font-medium text-slate-800">เมนูแนะนำ</dt><dd className="mt-1">{menu}</dd></div>}
+            </dl>
+            {(mapUrl || facebookUrl) && (
+              <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4 text-sm">
+                {mapUrl && (
+                  <a href={mapUrl} target="_blank" rel="noreferrer"
+                     className="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-red-50">📍 เปิดแผนที่</a>
+                )}
+                {facebookUrl && (
+                  <a href={facebookUrl} target="_blank" rel="noreferrer"
+                     className="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-red-50">Facebook ของร้าน</a>
+                )}
+              </div>
+            )}
+          </aside>
+        </div>
+      </main>
     </div>
   );
 }
