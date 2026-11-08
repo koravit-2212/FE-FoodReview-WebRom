@@ -1,4 +1,4 @@
-import { apiFetch, login, postReview, getRestaurants } from './backend';
+import { apiFetch, login, postReview, getRestaurants, photoUrl } from './backend';
 
 // ตัวช่วยสร้าง "คำตอบปลอม" ของ fetch: ใส่แค่ status กับ body ที่อยากให้ server ตอบ
 function fakeResponse(status, body) {
@@ -77,4 +77,35 @@ test('server ตอบมาไม่ใช่ JSON (เช่น ลืมร�
   fetch.mockResolvedValue({ ok: false, status: 404, json: () => Promise.reject(new SyntaxError('Unexpected token <')) });
 
   await expect(apiFetch('/api/restaurants')).rejects.toThrow('server ไม่ได้ตอบเป็น JSON');
+});
+
+test('postReview ที่แนบรูปต้องส่งเป็น FormData และไม่ตั้ง Content-Type เอง (ให้เบราว์เซอร์ใส่ boundary)', async () => {
+  fetch.mockResolvedValue(fakeResponse(201, { id: 9, photos: [] }));
+  const file = new File(['abc'], 'a.jpg', { type: 'image/jpeg' });
+
+  await postReview(1, { rating: 5, text: 'น้ำซุปเข้มข้นมาก เส้นเหนียวนุ่ม', authorName: 'สมชาย', photos: [file] }, 'tok');
+
+  const [url, options] = fetch.mock.calls[0];
+  expect(url).toBe('/api/restaurants/1/reviews');
+  expect(options.method).toBe('POST');
+  expect(options.body).toBeInstanceOf(FormData);
+  expect(options.headers['Content-Type']).toBeUndefined();
+  expect(options.headers.Authorization).toBe('Bearer tok');
+  expect(options.body.get('rating')).toBe('5');
+  expect(options.body.get('authorName')).toBe('สมชาย');
+  expect(options.body.getAll('photos')).toHaveLength(1);
+});
+
+test('postReview ที่ photos ว่างยังส่ง JSON ตามสัญญาเดิม ไม่มีฟิลด์ photos ใน body', async () => {
+  fetch.mockResolvedValue(fakeResponse(201, { id: 9 }));
+
+  await postReview(1, { rating: 4, text: 'อร่อยมาก ราคาไม่แพง', authorName: 'มานี', photos: [] }, 'tok');
+
+  const [, options] = fetch.mock.calls[0];
+  expect(options.headers['Content-Type']).toBe('application/json');
+  expect(JSON.parse(options.body)).toEqual({ rating: 4, text: 'อร่อยมาก ราคาไม่แพง', authorName: 'มานี' });
+});
+
+test('photoUrl ต่อ path รูปที่ backend ส่งมากับที่อยู่ backend (ตอนนี้ว่าง = origin เดียวกัน)', () => {
+  expect(photoUrl({ id: 12, url: '/api/photos/12' })).toBe('/api/photos/12');
 });

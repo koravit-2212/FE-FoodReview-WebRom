@@ -4,41 +4,53 @@ import { useAuth } from '../../auth/AuthContext';
 import { getAdminRestaurant, createRestaurant, updateRestaurant, deleteRestaurant } from '../../api/backend';
 import { ErrorBox, Loading, ConfirmBox, btnPrimary, btnDanger, inputClass } from '../../components/admin/AdminStates';
 import { CUISINES, PROVINCES } from '../../data/data';
-import { cuisineEmoji } from '../../utils/format';
+import RestaurantImage from '../../components/RestaurantImage';
 
 // ฟอร์มเดียวใช้ 2 โหมด: ไม่มี :id = เพิ่มร้านใหม่, มี :id = แก้ไข (โหลดค่าเดิมมาใส่ก่อน)
 // ฟอร์มเช็กข้อมูลชั้นแรกให้ผู้ใช้เห็นเร็ว แต่ backend เช็กซ้ำทุกครั้ง เพราะฟอร์มนี้ข้ามได้ด้วย curl
 
 const EMPTY = {
-  name: '', nameTh: '', cuisine: '', province: '', district: '',
-  description: '', address: '', phone: '', openingHours: '', image: '', menu: '',
+  name: '', nameTh: '', cuisines: '', province: '', district: '',
+  description: '', address: '', phone: '', openingHours: '', menu: '',
+  image: '', imageCredit: '', googleMapsLink: '', facebook: '',
 };
+
+// ประเภทอาหารในฟอร์มเป็นข้อความคั่นด้วยจุลภาค (ตัวแรกคือประเภทหลัก) แปลงเป็น array ตอนส่ง
+const splitList = (text) => text.split(',').map(s => s.trim()).filter(Boolean);
+const isHttp = (url) => /^https?:\/\//.test(url.trim());
 
 // ตรวจชั้นแรกในเบราว์เซอร์ (กติกาเดียวกับที่ backend ตรวจ)
 function validate(f) {
   const errs = {};
   if (!f.name.trim()) errs.name = 'ต้องมีชื่อร้าน';
-  if (!f.cuisine.trim()) errs.cuisine = 'ต้องระบุประเภทอาหาร';
+  if (splitList(f.cuisines).length === 0) errs.cuisines = 'ต้องระบุประเภทอาหารอย่างน้อย 1 ประเภท';
   if (!PROVINCES.includes(f.province)) errs.province = 'ต้องเลือกจังหวัด';
-  if (f.image && !/^https?:\/\//.test(f.image.trim())) errs.image = 'ต้องขึ้นต้นด้วย http:// หรือ https://';
+  if (f.image && !isHttp(f.image)) errs.image = 'ต้องขึ้นต้นด้วย http:// หรือ https://';
+  if (f.googleMapsLink && !isHttp(f.googleMapsLink)) errs.googleMapsLink = 'ต้องขึ้นต้นด้วย http:// หรือ https://';
+  if (f.facebook && !isHttp(f.facebook)) errs.facebook = 'ต้องขึ้นต้นด้วย http:// หรือ https://';
   return errs;
 }
 
-// แปลงค่าจากฟอร์ม (string ทั้งหมด) เป็น JSON ที่ backend ต้องการ (ว่าง = null, menu = array)
+// แปลงค่าจากฟอร์ม (string ทั้งหมด) เป็น JSON ที่ backend ต้องการ (ว่าง = null, cuisines = array)
 function toPayload(f) {
   const nz = (s) => (s && s.trim() ? s.trim() : null);
+  const cuisines = splitList(f.cuisines);
   return {
     name: f.name.trim(),
     nameTh: nz(f.nameTh),
-    cuisine: f.cuisine.trim(),
+    cuisine: cuisines[0],          // ประเภทหลักตัวเดียว ไว้ให้ backend รุ่นเก่าที่ยังไม่รู้จัก cuisines
+    cuisines,
     province: f.province,
     district: nz(f.district),
     description: nz(f.description),
     address: nz(f.address),
     phone: nz(f.phone),
     openingHours: nz(f.openingHours),
+    menu: nz(f.menu),
     image: nz(f.image),
-    menu: f.menu.split(',').map(s => s.trim()).filter(Boolean),
+    imageCredit: nz(f.imageCredit),
+    googleMapsLink: nz(f.googleMapsLink),
+    facebook: nz(f.facebook),
   };
 }
 
@@ -69,11 +81,14 @@ function AdminRestaurantForm() {
         const r = await getAdminRestaurant(id, token);
         if (ignore) return;
         setForm({
-          name: r.name ?? '', nameTh: r.nameTh ?? '', cuisine: r.cuisine ?? '',
+          name: r.name ?? '', nameTh: r.nameTh ?? '',
+          cuisines: (r.cuisines?.length ? r.cuisines : [r.cuisine].filter(Boolean)).join(', '),
           province: r.province ?? '', district: r.district ?? '',
           description: r.description ?? '', address: r.address ?? '', phone: r.phone ?? '',
-          openingHours: r.openingHours ?? '', image: r.images?.[0] ?? '',
-          menu: (r.menu ?? []).join(', '),
+          openingHours: r.openingHours ?? '',
+          menu: Array.isArray(r.menu) ? r.menu.join(', ') : (r.menu ?? ''),
+          image: r.images?.[0] ?? '', imageCredit: r.imageCredit ?? '',
+          googleMapsLink: r.googleMapsLink ?? '', facebook: r.facebook ?? '',
         });
         setImpact(r.impact);
         setStatus('ready');
@@ -91,6 +106,14 @@ function AdminRestaurantForm() {
       setForm({ ...form, [field]: e.target.value });
       setSaved(false);
     };
+  }
+
+  // กดปุ่มประเภทเพื่อเพิ่ม/เอาออกจากรายการ
+  function toggleCuisine(name) {
+    const list = splitList(form.cuisines);
+    const next = list.includes(name) ? list.filter(c => c !== name) : [...list, name];
+    setForm({ ...form, cuisines: next.join(', ') });
+    setSaved(false);
   }
 
   async function handleSubmit(e) {
@@ -155,13 +178,22 @@ function AdminRestaurantForm() {
               <label className={label}>ชื่อไทย</label>
               <input value={form.nameTh} onChange={set('nameTh')} className={inputClass} />
             </div>
-            <div>
-              <label className={label}>ประเภทอาหาร *</label>
-              <input value={form.cuisine} onChange={set('cuisine')} list="cuisine-options" className={inputClass} />
-              <datalist id="cuisine-options">
-                {CUISINES.map(c => <option key={c} value={c} />)}
-              </datalist>
-              {fieldErr('cuisine')}
+            <div className="md:col-span-2">
+              <label className={label}>ประเภทอาหาร * (คั่นด้วยจุลภาค ตัวแรกคือประเภทหลัก)</label>
+              <input value={form.cuisines} onChange={set('cuisines')} placeholder="เช่น ไทย, ของหวาน" className={inputClass} />
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {CUISINES.map(c => {
+                  const on = splitList(form.cuisines).includes(c);
+                  return (
+                    <button type="button" key={c} onClick={() => toggleCuisine(c)}
+                            className={'rounded-full border px-2.5 py-0.5 text-xs ' +
+                              (on ? 'border-red-600 bg-red-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:bg-red-50')}>
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+              {fieldErr('cuisines')}
             </div>
             <div>
               <label className={label}>จังหวัด *</label>
@@ -193,13 +225,29 @@ function AdminRestaurantForm() {
             <textarea value={form.description} onChange={set('description')} rows={3} className={inputClass} />
           </div>
           <div>
-            <label className={label}>เมนูแนะนำ (คั่นด้วยเครื่องหมายจุลภาค)</label>
-            <input value={form.menu} onChange={set('menu')} placeholder="เช่น ราเมน, เกี๊ยวซ่า" className={inputClass} />
+            <label className={label}>เมนูแนะนำ</label>
+            <input value={form.menu} onChange={set('menu')} placeholder="เช่น ราเมน เกี๊ยวซ่า" className={inputClass} />
           </div>
           <div>
             <label className={label}>รูปภาพ (URL)</label>
             <input value={form.image} onChange={set('image')} placeholder="https://..." className={inputClass} />
             {fieldErr('image')}
+          </div>
+          <div>
+            <label className={label}>ที่มาของรูป (เครดิต)</label>
+            <input value={form.imageCredit} onChange={set('imageCredit')} className={inputClass} />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className={label}>ลิงก์ Google Maps</label>
+              <input value={form.googleMapsLink} onChange={set('googleMapsLink')} placeholder="https://..." className={inputClass} />
+              {fieldErr('googleMapsLink')}
+            </div>
+            <div>
+              <label className={label}>ลิงก์ Facebook</label>
+              <input value={form.facebook} onChange={set('facebook')} placeholder="https://..." className={inputClass} />
+              {fieldErr('facebook')}
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
@@ -216,9 +264,8 @@ function AdminRestaurantForm() {
 
         <aside className="space-y-3">
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-            {form.image.trim().startsWith('http')
-              ? <img src={form.image.trim()} alt="ตัวอย่างรูปร้าน" className="aspect-[4/3] w-full object-cover" />
-              : <div className="grid aspect-[4/3] place-items-center bg-slate-100 text-4xl">{cuisineEmoji(form.cuisine)}</div>}
+            <RestaurantImage src={form.image.trim().startsWith('http') ? form.image.trim() : null} alt="ตัวอย่างรูปร้าน"
+                             cuisine={splitList(form.cuisines)[0]} className="aspect-[4/3] w-full object-cover" />
             <p className="p-2 text-center text-xs text-slate-400">ตัวอย่างรูปร้าน</p>
           </div>
           {impact && (

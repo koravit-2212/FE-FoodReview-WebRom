@@ -1,4 +1,4 @@
--- FoodJubb: สร้างตารางทั้งหมด (PostgreSQL 14+) รันครั้งเดียว: psql "$DATABASE_URL" -f docs/db/schema.sql
+-- foodjubb: สร้างตารางทั้งหมด (PostgreSQL 14+) รันครั้งเดียวตอนฐานข้อมูลยังว่าง
 -- คำอธิบายและ ER diagram อยู่ใน docs/db-schema.md
 
 BEGIN;
@@ -28,35 +28,45 @@ CREATE UNIQUE INDEX members_email_uk ON members (lower(email));    -- อีเ�
 
 -- ---------- ร้านอาหาร ----------
 CREATE TABLE restaurants (
-  id             bigserial PRIMARY KEY,
-  name           varchar(150) NOT NULL,
-  name_th        varchar(150),
-  cuisine_id     smallint     NOT NULL REFERENCES cuisines (id),
-  province_id    smallint     NOT NULL REFERENCES provinces (id),
-  district       varchar(80),
-  address        varchar(255),
-  description    text,
-  phone          varchar(30),
-  opening_hours  varchar(60),
-  image_url      varchar(500),
-  rating         numeric(2,1) NOT NULL DEFAULT 0 CHECK (rating BETWEEN 0 AND 5),   -- ค่าเฉลี่ยจาก reviews (trigger ด้านล่างอัปเดตให้)
-  review_count   integer      NOT NULL DEFAULT 0 CHECK (review_count >= 0),
-  created_at     timestamptz  NOT NULL DEFAULT now(),
-  updated_at     timestamptz  NOT NULL DEFAULT now()
+  id                bigserial PRIMARY KEY,
+  name              varchar(150) NOT NULL,
+  name_th           varchar(150),
+  province_id       smallint     NOT NULL REFERENCES provinces (id),
+  district          varchar(80),
+  address           varchar(255),
+  description       text,
+  phone             varchar(60),                               -- บางร้านมีหลายเบอร์ คั่นด้วย / หรือ ,
+  opening_hours     varchar(100),
+  menu              text,                                      -- เมนูแนะนำ เป็นข้อความอิสระ ใช้ค้นหาด้วย q
+  image_url         text,                                      -- ลิงก์รูป (ยาวได้มาก จึงใช้ text)
+  image_credit      text,                                      -- ที่มาของรูป
+  google_maps_link  text,
+  facebook_url      text,
+  rating            numeric(2,1) NOT NULL DEFAULT 0 CHECK (rating BETWEEN 0 AND 5),   -- ค่าเฉลี่ยจาก reviews (trigger ด้านล่างอัปเดตให้)
+  review_count      integer      NOT NULL DEFAULT 0 CHECK (review_count >= 0),
+  created_at        timestamptz  NOT NULL DEFAULT now(),
+  updated_at        timestamptz  NOT NULL DEFAULT now()
 );
 CREATE INDEX restaurants_province_idx ON restaurants (province_id);       -- กรองตามจังหวัด
-CREATE INDEX restaurants_cuisine_idx  ON restaurants (cuisine_id);        -- กรองตามประเภท
 CREATE INDEX restaurants_rating_idx   ON restaurants (rating DESC, review_count DESC);   -- sort=rating
 CREATE INDEX restaurants_created_idx  ON restaurants (created_at DESC);   -- sort=newest
 
--- เมนูแนะนำของร้าน (ใช้ค้นหา q และโชว์ในหน้ารายละเอียด)
-CREATE TABLE restaurant_menu_items (
-  restaurant_id  bigint       NOT NULL REFERENCES restaurants (id) ON DELETE CASCADE,
-  position       smallint     NOT NULL,
-  name           varchar(120) NOT NULL,
-  PRIMARY KEY (restaurant_id, position)
+-- ร้านหนึ่งมีได้หลายประเภท (เช่น ไทย + ของหวาน + กาแฟ) position 0 = ประเภทหลัก
+CREATE TABLE restaurant_cuisines (
+  restaurant_id  bigint   NOT NULL REFERENCES restaurants (id) ON DELETE CASCADE,
+  cuisine_id     smallint NOT NULL REFERENCES cuisines (id),
+  position       smallint NOT NULL DEFAULT 0,
+  PRIMARY KEY (restaurant_id, cuisine_id)
 );
-CREATE INDEX menu_items_name_idx ON restaurant_menu_items (lower(name));
+CREATE INDEX restaurant_cuisines_cuisine_idx ON restaurant_cuisines (cuisine_id);   -- กรองตามประเภท
+
+-- รางวัล เช่น Michelin Bib Gourmand ร้านหนึ่งได้หลายปี
+CREATE TABLE restaurant_awards (
+  restaurant_id  bigint      NOT NULL REFERENCES restaurants (id) ON DELETE CASCADE,
+  year           smallint    NOT NULL,
+  award          varchar(60) NOT NULL,
+  PRIMARY KEY (restaurant_id, year, award)
+);
 
 -- ---------- รีวิว ----------
 CREATE TABLE reviews (
@@ -70,6 +80,19 @@ CREATE TABLE reviews (
   UNIQUE (member_id, restaurant_id)                                       -- รีวิวร้านเดียวกันได้คนละครั้ง (ซ้ำ = 409)
 );
 CREATE INDEX reviews_restaurant_idx ON reviews (restaurant_id, created_at DESC);
+
+-- รูปที่แนบกับรีวิว (ถ่ายหรือเลือกจากเครื่อง) เก็บไฟล์ในฐานข้อมูลเลย ลบรีวิวแล้วรูปหายตาม
+-- รีวิวหนึ่งแนบได้สูงสุด 3 รูป (position 0-2) รูปละไม่เกิน 5 MB เฉพาะ JPG / PNG / WebP
+CREATE TABLE review_photos (
+  id            bigserial PRIMARY KEY,
+  review_id     bigint      NOT NULL REFERENCES reviews (id) ON DELETE CASCADE,
+  position      smallint    NOT NULL CHECK (position BETWEEN 0 AND 2),
+  content_type  varchar(20) NOT NULL CHECK (content_type IN ('image/jpeg', 'image/png', 'image/webp')),
+  data          bytea       NOT NULL,
+  size_bytes    integer     NOT NULL CHECK (size_bytes > 0 AND size_bytes <= 5242880),
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (review_id, position)
+);
 
 -- ---------- ร้านที่อยากไปกิน ----------
 CREATE TABLE wishlist_items (
@@ -180,11 +203,25 @@ INSERT INTO provinces (name_th) VALUES
 
 INSERT INTO cuisines (name) VALUES
   ('ไทย'),
+  ('กาแฟ'),
+  ('ของหวาน'),
+  ('เบเกอรี่/คาเฟ่'),
+  ('ฟาสต์ฟู้ด/ของทานเล่น'),
+  ('อีสาน'),
+  ('เอเชียนฟิวชัน'),
+  ('อาหารทะเล'),
+  ('อเมริกัน'),
+  ('ยุโรป'),
+  ('ไอศกรีม'),
+  ('ก๋วยเตี๋ยว'),
   ('ญี่ปุ่น'),
+  ('อาหารเหนือ'),
   ('อิตาเลียน'),
-  ('คาเฟ่'),
+  ('อาหารมุสลิม'),
   ('จีน'),
-  ('ปิ้งย่าง'),
-  ('อาหารทะเล');
+  ('ฝรั่งเศส/บิสโทร'),
+  ('ฮาลาล'),
+  ('บาร์บีคิว'),
+  ('เวียดนาม');
 
 COMMIT;

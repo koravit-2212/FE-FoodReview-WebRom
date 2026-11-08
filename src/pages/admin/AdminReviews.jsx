@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
-import { getAdminReviews, deleteReview } from '../../api/backend';
+import { getAdminReviews, deleteReview, photoUrl } from '../../api/backend';
 import { ErrorBox, Loading, ConfirmBox, inputClass } from '../../components/admin/AdminStates';
 import { dateTH } from '../../utils/format';
 
@@ -84,6 +84,18 @@ function AdminReviews() {
                   <td className="px-4 py-2">
                     <p className="text-slate-700">{r.text}</p>
                     <p className="text-xs text-slate-400">{r.authorName} | ⭐ {r.rating}/5</p>
+                    {r.photos?.length > 0 && (
+                      <ul className="mt-2 flex gap-2">
+                        {r.photos.map((p, i) => (
+                          <li key={p.id}>
+                            <a href={photoUrl(p)} target="_blank" rel="noreferrer">
+                              <img src={photoUrl(p)} alt={`รูปที่ ${i + 1} ของรีวิว`} loading="lazy"
+                                   className="h-14 w-14 rounded border border-slate-200 object-cover" />
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-slate-600">{dateTH(r.createdAt)}</td>
                   <td className="px-4 py-2 text-right">
@@ -101,7 +113,7 @@ function AdminReviews() {
 
       <ConfirmBox open={Boolean(target)} busy={busy} title="ลบรีวิวนี้ ?" confirmText="ลบรีวิว"
                   onConfirm={confirmDelete} onCancel={() => setTarget(null)}>
-        <p>รีวิวของ {target?.authorName} ต่อร้าน {target?.restaurantName} จะถูกลบถาวร และคะแนนเฉลี่ยของร้านจะถูกคำนวณใหม่</p>
+        <p>รีวิวของ {target?.authorName} ต่อร้าน {target?.restaurantName}{target?.photos?.length > 0 ? ` พร้อมรูป ${target.photos.length} รูป` : ''} จะถูกลบถาวร และคะแนนเฉลี่ยของร้านจะถูกคำนวณใหม่</p>
       </ConfirmBox>
     </div>
   );

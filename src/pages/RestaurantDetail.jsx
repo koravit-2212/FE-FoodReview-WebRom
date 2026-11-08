@@ -3,9 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import ReviewForm from '../components/ReviewForm';
 import ReviewList from '../components/ReviewList';
 import RestaurantActions from '../components/RestaurantActions';
+import RestaurantImage from '../components/RestaurantImage';
 import { getRestaurant, getReviews, postReview } from '../api/backend';
 import { useAuth } from '../auth/AuthContext';
-import { cuisineEmoji, ratingText } from '../utils/format';
+import { fullAddress, ratingText, safeUrl } from '../utils/format';
 
 function RestaurantDetail() {
   const { id } = useParams();                       // ได้เป็น string เสมอ
@@ -41,8 +42,8 @@ function RestaurantDetail() {
   }, [id]);
 
   // ส่งรีวิวจริง: ReviewForm เรียกฟังก์ชันนี้ตอนกดส่ง ถ้า throw ฟอร์มจะโชว์ข้อความ error เอง
-  async function handleReviewSubmit({ rating, text }) {
-    const saved = await postReview(id, { rating, text, authorName: member.displayName }, token);   // 201
+  async function handleReviewSubmit({ rating, text, photos }) {
+    const saved = await postReview(id, { rating, text, authorName: member.displayName, photos }, token);   // 201
     setReviews([saved, ...reviews]);                                // ต่อหน้ารายการเดิม
     // backend อัปเดตคะแนนเฉลี่ยกับจำนวนรีวิวของร้านแล้ว โหลดร้านใหม่เพื่อให้ตัวเลขบนหน้าตรงกัน
     getRestaurant(id, token).then(setRestaurant).catch(() => {});
@@ -74,35 +75,64 @@ function RestaurantDetail() {
   }
 
   const cover = restaurant.images?.[0];
+  const cuisines = restaurant.cuisines?.length ? restaurant.cuisines : [restaurant.cuisine].filter(Boolean);
+  const mapUrl = safeUrl(restaurant.googleMapsLink);
+  const facebookUrl = safeUrl(restaurant.facebook);
+  // รางวัลของร้านรวมปีเป็นข้อความเดียว เช่น { "Bib Gourmand": [2025, 2024] }
+  const awards = {};
+  (restaurant.awards ?? []).forEach(a => { (awards[a.award] ??= []).push(a.year); });
+  const menu = Array.isArray(restaurant.menu) ? restaurant.menu.join(', ') : restaurant.menu;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 md:px-6">
       <Link to="/restaurants" className="text-sm text-slate-500 hover:text-red-600">กลับไปหน้าร้านทั้งหมด</Link>
 
       <div className="mt-4 flex flex-col gap-8 md:flex-row">
-        {cover ? (
-          <img src={cover} alt={`รูปร้าน ${restaurant.name}`}
-               className="aspect-[4/3] w-full shrink-0 self-start rounded-xl border border-slate-200 object-cover md:w-72" />
-        ) : (
-          <div className="grid aspect-[4/3] w-full shrink-0 place-items-center rounded-xl bg-slate-100 text-6xl md:w-72">
-            {cuisineEmoji(restaurant.cuisine)}
-          </div>
-        )}
+        <div className="w-full shrink-0 self-start md:w-72">
+          <RestaurantImage src={cover} alt={`รูปร้าน ${restaurant.name}`} cuisine={restaurant.cuisine} emojiClass="text-6xl"
+                           className="aspect-[4/3] w-full rounded-xl border border-slate-200 object-cover" />
+          {cover && restaurant.imageCredit && (
+            <p className="mt-1 text-xs text-slate-400">{restaurant.imageCredit}</p>
+          )}
+        </div>
 
         <div className="flex-1">
           <h1 className="text-2xl font-semibold text-slate-900 md:text-3xl">{restaurant.name}</h1>
           {restaurant.nameTh && <p className="mt-1 text-slate-500">{restaurant.nameTh}</p>}
           <p className="mt-2 text-sm text-slate-500">
-            {restaurant.cuisine} | {restaurant.province} | {ratingText(restaurant.rating, restaurant.reviewCount)}
+            {restaurant.province} | {ratingText(restaurant.rating, restaurant.reviewCount)}
           </p>
+          <ul className="mt-2 flex flex-wrap gap-1.5">
+            {cuisines.map(c => (
+              <li key={c} className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs text-red-700">{c}</li>
+            ))}
+            {Object.entries(awards).map(([award, years]) => (
+              <li key={award} className="rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs text-yellow-800">
+                🏅 Michelin {award} {years.join(', ')}
+              </li>
+            ))}
+          </ul>
           {restaurant.description && <p className="mt-4 leading-relaxed text-slate-700">{restaurant.description}</p>}
 
           <dl className="mt-4 space-y-1 text-sm text-slate-600">
-            {restaurant.address && <div><dt className="inline font-medium">ที่อยู่: </dt><dd className="inline">{restaurant.address} {restaurant.province}</dd></div>}
+            {fullAddress(restaurant) && <div><dt className="inline font-medium">ที่อยู่: </dt><dd className="inline">{fullAddress(restaurant)}</dd></div>}
             {restaurant.phone && <div><dt className="inline font-medium">โทร: </dt><dd className="inline">{restaurant.phone}</dd></div>}
             {restaurant.openingHours && <div><dt className="inline font-medium">เวลาเปิด: </dt><dd className="inline">{restaurant.openingHours}</dd></div>}
-            {restaurant.menu?.length > 0 && <div><dt className="inline font-medium">เมนูแนะนำ: </dt><dd className="inline">{restaurant.menu.join(', ')}</dd></div>}
+            {menu && <div><dt className="inline font-medium">เมนูแนะนำ: </dt><dd className="inline">{menu}</dd></div>}
           </dl>
+
+          {(mapUrl || facebookUrl) && (
+            <div className="mt-3 flex flex-wrap gap-2 text-sm">
+              {mapUrl && (
+                <a href={mapUrl} target="_blank" rel="noreferrer"
+                   className="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-red-50">📍 เปิดแผนที่</a>
+              )}
+              {facebookUrl && (
+                <a href={facebookUrl} target="_blank" rel="noreferrer"
+                   className="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-red-50">Facebook ของร้าน</a>
+              )}
+            </div>
+          )}
 
           {/* Guest เห็นลิงก์ให้เข้าสู่ระบบ, Member เห็นปุ่มหัวใจ */}
           <RestaurantActions key={restaurant.id + String(token)} restaurantId={restaurant.id} initialWishlisted={restaurant.isWishlisted} />

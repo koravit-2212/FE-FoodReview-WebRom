@@ -7,13 +7,15 @@
 const BASE = process.env.REACT_APP_API_URL || '';
 
 export async function apiFetch(path, { method = 'GET', body, token } = {}) {
-  const headers = { 'Content-Type': 'application/json' };   // 1) บอก server ว่า body เป็น JSON
+  // body เป็น FormData = อัปโหลดไฟล์: ห้ามตั้ง Content-Type เอง ให้เบราว์เซอร์ใส่ boundary ให้
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+  const headers = isForm ? {} : { 'Content-Type': 'application/json' };   // 1) บอก server ว่า body เป็น JSON
   if (token) headers.Authorization = `Bearer ${token}`;      //    และแนบบัตรผ่านถ้ามี
 
   const res = await fetch(BASE + path, {                     // 2) ยิงจริง
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,           //    object ต้องแปลงเป็นข้อความก่อนส่ง
+    body: body ? (isForm ? body : JSON.stringify(body)) : undefined,   //    object ต้องแปลงเป็นข้อความก่อนส่ง
   });
 
   if (res.status === 204) return null;                       // 3) ลบสำเร็จ ไม่มี body ให้อ่าน
@@ -64,9 +66,25 @@ export function getRestaurant(id, token) {
 export function getReviews(restaurantId, params) {
   return apiFetch(`/api/restaurants/${restaurantId}/reviews` + toQuery(params));          // ได้ { results, page, limit, total }
 }
-// fields = { rating, text, authorName } 201 ได้รีวิวที่บันทึกแล้ว
+// fields = { rating, text, authorName, photos? } 201 ได้รีวิวที่บันทึกแล้ว (มี photos: [{ id, url }])
+// photos คืออาร์เรย์ของไฟล์รูป (ไม่เกิน 3): ไม่มีรูป = ส่ง JSON ตามสัญญาเดิม, มีรูป = ส่ง multipart/form-data
 export function postReview(restaurantId, fields, token) {
-  return apiFetch(`/api/restaurants/${restaurantId}/reviews`, { method: 'POST', body: fields, token });
+  const { photos = [], ...rest } = fields;
+  const path = `/api/restaurants/${restaurantId}/reviews`;
+  if (photos.length === 0) {
+    return apiFetch(path, { method: 'POST', body: rest, token });
+  }
+  const form = new FormData();
+  form.append('rating', rest.rating);
+  form.append('text', rest.text);
+  form.append('authorName', rest.authorName);
+  photos.forEach((file, i) => form.append('photos', file, file.name || `photo-${i + 1}.jpg`));
+  return apiFetch(path, { method: 'POST', body: form, token });
+}
+
+// ลิงก์รูปของรีวิวเอาไปใส่ <img src> (backend ส่ง url แบบ /api/photos/12 ต้องต่อกับที่อยู่ backend)
+export function photoUrl(photo) {
+  return BASE + photo.url;
 }
 
 // ---------- ร้านที่อยากไปกิน (เฉพาะสมาชิก) ----------

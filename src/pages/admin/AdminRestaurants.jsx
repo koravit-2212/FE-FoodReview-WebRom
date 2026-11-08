@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getRestaurants } from '../../api/backend';
 import { ErrorBox, Loading, btnPrimary, inputClass } from '../../components/admin/AdminStates';
-import { ratingText } from '../../utils/format';
+import { cuisinesText, ratingText } from '../../utils/format';
 
 // ตารางร้านทั้งหมด: ใช้ GET /api/restaurants ตัวเดิม (สาธารณะ) ขอทีละ 100 ร้านแล้วกรองในเครื่อง
 // ส่วนที่ต้องเป็น admin คือปุ่มแก้ไข/เพิ่ม ซึ่งพาไปหน้าฟอร์ม
@@ -68,7 +68,7 @@ function AdminRestaurants() {
                     <p className="truncate font-medium text-slate-900">{r.name}</p>
                     <p className="truncate text-xs text-slate-500">{r.nameTh ?? '(ยังไม่มีชื่อไทย)'} <span className="text-slate-300">#{r.id}</span></p>
                   </td>
-                  <td className="px-4 py-2 text-slate-600">{r.cuisine}</td>
+                  <td className="px-4 py-2 text-slate-600">{cuisinesText(r, 2)}</td>
                   <td className="px-4 py-2 text-slate-600">{r.province}</td>
                   <td className="px-4 py-2 text-slate-600">{ratingText(r.rating, r.reviewCount)}</td>
                   <td className="px-4 py-2 text-right">
