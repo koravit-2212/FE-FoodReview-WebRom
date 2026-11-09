@@ -63,8 +63,8 @@ export function getRestaurant(id, token) {
 }
 
 // ---------- รีวิว ----------
-export function getReviews(restaurantId, params) {
-  return apiFetch(`/api/restaurants/${restaurantId}/reviews` + toQuery(params));          // ได้ { results, page, limit, total }
+export function getReviews(restaurantId, params = {}, token) {
+  return apiFetch(`/api/restaurants/${restaurantId}/reviews` + toQuery(params), { token }); // ได้ { results, page, limit, total }
 }
 // fields = { rating, text, authorName, photos? } 201 ได้รีวิวที่บันทึกแล้ว (มี photos: [{ id, url }])
 // photos คืออาร์เรย์ของไฟล์รูป (ไม่เกิน 3): ไม่มีรูป = ส่ง JSON ตามสัญญาเดิม, มีรูป = ส่ง multipart/form-data
@@ -124,6 +124,9 @@ export function deleteRestaurant(id, token) {
 export async function getAdminReviews(token) {
   const data = await apiFetch('/api/admin/reviews', { token });
   return data.results;
+}
+export function deleteMyReview(reviewId, token) {
+  return apiFetch(`/api/reviews/${reviewId}`, { method: 'DELETE', token });                // ลบได้เฉพาะรีวิวของตัวเอง
 }
 export function deleteReview(reviewId, token) {
   return apiFetch(`/api/admin/reviews/${reviewId}`, { method: 'DELETE', token });         // 204 ได้ null

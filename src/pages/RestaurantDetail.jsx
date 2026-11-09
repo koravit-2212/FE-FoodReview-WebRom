@@ -4,7 +4,7 @@ import ReviewForm from '../components/ReviewForm';
 import ReviewList from '../components/ReviewList';
 import RestaurantActions from '../components/RestaurantActions';
 import RestaurantImage from '../components/RestaurantImage';
-import { getRestaurant, getReviews, postReview } from '../api/backend';
+import { getRestaurant, getReviews, postReview, deleteMyReview } from '../api/backend';
 import { useAuth } from '../auth/AuthContext';
 import { fullAddress, ratingText, safeUrl } from '../utils/format';
 
@@ -35,17 +35,31 @@ function RestaurantDetail() {
   // โหลดรีวิวแยก effect เพราะรีวิวล่มไม่ควรทำให้หน้าทั้งหน้าพัง
   useEffect(() => {
     let ignore = false;
-    getReviews(id)
-      .then(data => { if (!ignore) setReviews(data.results); })
+    getReviews(id, {}, token)
+      .then(data => {
+        if (!ignore) {
+          setReviews((data.results || []).map(review => ({
+            ...review,
+            isMine: Boolean(member && (review.isMine || Number(review.memberId) === Number(member.id))),
+          })));
+        }
+      })
       .catch(() => { if (!ignore) setReviews([]); });   // backend รีวิวล่มก็แค่ไม่มีรีวิว หน้าร้านยังดูได้
     return () => { ignore = true; };
-  }, [id]);
+  }, [id, token, member]);
 
   // ส่งรีวิวจริง: ReviewForm เรียกฟังก์ชันนี้ตอนกดส่ง ถ้า throw ฟอร์มจะโชว์ข้อความ error เอง
   async function handleReviewSubmit({ rating, text, photos }) {
     const saved = await postReview(id, { rating, text, authorName: member.displayName, photos }, token);   // 201
-    setReviews([saved, ...reviews]);                                // ต่อหน้ารายการเดิม
+    setReviews([{ ...saved, isMine: true }, ...reviews]);
     // backend อัปเดตคะแนนเฉลี่ยกับจำนวนรีวิวของร้านแล้ว โหลดร้านใหม่เพื่อให้ตัวเลขบนหน้าตรงกัน
+    getRestaurant(id, token).then(setRestaurant).catch(() => {});
+  }
+
+  async function handleReviewDelete(reviewId) {
+    if (!token) throw new Error('กรุณาเข้าสู่ระบบก่อน');
+    await deleteMyReview(reviewId, token);
+    setReviews(prev => prev.filter(r => r.id !== reviewId));
     getRestaurant(id, token).then(setRestaurant).catch(() => {});
   }
 
@@ -146,7 +160,7 @@ function RestaurantDetail() {
 
             <section className="rounded-xl border border-slate-200 bg-white p-5">
               <h2 className="mb-3 text-lg font-semibold text-slate-900">รีวิว ({reviews.length})</h2>
-              <ReviewList items={reviews} />
+              <ReviewList items={reviews} onDelete={isLoggedIn ? handleReviewDelete : undefined} />
               <div className="mt-5 border-t border-slate-100 pt-5">
                 {isLoggedIn ? (
                   <ReviewForm key={restaurant.id} restaurantName={restaurant.name} onSubmit={handleReviewSubmit} />
