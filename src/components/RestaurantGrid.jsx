@@ -3,7 +3,7 @@ import RestaurantCard from './RestaurantCard';
 // วาดรายการร้านตาม "สถานะ" 3 แบบ: loading | error | success (สำเร็จแต่ว่างเปล่าก็เป็น success)
 function RestaurantGrid({ restaurants, status, error, onRetry, onWishlistChange, showHeart = true,
                           emptyText = 'ไม่พบร้านที่ค้นหา ลองคำอื่นหรือเปลี่ยนจังหวัดดู' }) {
-  const gridClass = 'grid gap-5 md:grid-cols-2';
+  const gridClass = 'grid w-full gap-4 sm:grid-cols-2';
 
   if (status === 'loading') {
     return (
